@@ -45,12 +45,14 @@ int main() {
     if (bind(sockfd, res->ai_addr, res->ai_addrlen) != 0) {
         int err = errno;
         std::cerr << "bind error: " << err << "\n";
+        return 1;
     }
 
     // Listen for incoming connecting
     if (listen(sockfd, BACKLOG) != 0) {
         int err = errno;
         std::cerr << "listen error: " << err << "\n";
+        return 1;
     }
 
     freeaddrinfo(res); // Free the linked list
