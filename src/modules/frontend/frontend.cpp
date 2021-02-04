@@ -4,6 +4,9 @@
 #include <cstring>
 #include <iostream>
 
+#define BACKLOG_SIZE 10
+#define SERVICE_PORT "8080"
+
 int main() {
     /* This module will listen for incoming connections
      * from React and handle them.
@@ -33,15 +36,21 @@ int main() {
 
     // Get the socket file descriptor
     if ((sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1) {
-       status = errno;
-       std::cerr << "error while getting the socket file descriptor: " << status << "\n";
+       int err = errno;
+       std::cerr << "error while getting the socket file descriptor: " << err << "\n";
        return 1;
     }
 
     // Bind socket to port specified in "getaddrinfo"
-    if (bind(sockfd, res->ai_addr, res->ai_addrlen) == -1) {
+    if (bind(sockfd, res->ai_addr, res->ai_addrlen) != 0) {
         int err = errno;
         std::cerr << "bind error: " << err << "\n";
+    }
+
+    // Listen for incoming connecting
+    if (listen(sockfd, BACKLOG_SIZE) != 0) {
+        int err = errno;
+        std::cerr << "listen error: " << err << "\n";
     }
 
     freeaddrinfo(res); // Free the linked list
