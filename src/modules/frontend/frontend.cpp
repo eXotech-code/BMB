@@ -4,8 +4,8 @@
 #include <cstring>
 #include <iostream>
 
-#define BACKLOG_SIZE 10
-#define SERVICE_PORT "8080"
+#define BACKLOG 10
+#define PORT "8080"
 
 int main() {
     /* This module will listen for incoming connections
@@ -29,7 +29,7 @@ int main() {
     hints.ai_flags = AI_PASSIVE; // localhost
 
     // Pack the *res with getaddrinfo() and lookup the error code on failure
-    if ((status = getaddrinfo(NULL, "8080", &hints, &res)) != 0) {
+    if ((status = getaddrinfo(NULL, PORT, &hints, &res)) != 0) {
         std::cerr << "getaddrinfo error: " << gai_strerror(status) << "\n";
         return 1;
     }
@@ -48,7 +48,7 @@ int main() {
     }
 
     // Listen for incoming connecting
-    if (listen(sockfd, BACKLOG_SIZE) != 0) {
+    if (listen(sockfd, BACKLOG) != 0) {
         int err = errno;
         std::cerr << "listen error: " << err << "\n";
     }
