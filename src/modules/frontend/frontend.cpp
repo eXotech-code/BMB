@@ -2,10 +2,12 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <cstring>
 #include <iostream>
 #include <cstdlib>
+#include <string>
 
 #define BACKLOG 10
 #define PORT "8080"
@@ -55,6 +57,7 @@ int main() {
     socklen_t sin_size; // Size of the address.
     int yes = 1; // This is used to set option value in "setsockopt()".
     struct sigaction sa; // Eliminate zombie processes. See man sigaction(2) and man wait(2).
+    char client_addr_c[INET6_ADDRSTRLEN]; // Client address converted from binary.
 
     // Reset the value of hints
     std::memset(&hints, 0, sizeof hints);
@@ -124,6 +127,16 @@ int main() {
     // Now the fun begins!
     while(1) {
         sin_size = sizeof client_addr;
+        new_fd = accept(sockfd, (struct sockaddr *)&client_addr, &sin_size);
+        if (new_fd == -1) {
+            int err = errno;
+            std::cerr << "accept error: " << err << "\n";
+            continue;
+        }
+
+        // Convert client's address from binary to text form.
+        inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr), client_addr_c, sizeof client_addr_c);
+        std::cout << "Client connected from: " << client_addr_c << "\n";
     }
 
     return 0;
