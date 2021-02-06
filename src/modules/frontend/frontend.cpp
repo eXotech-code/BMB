@@ -7,7 +7,6 @@
 #include <cstring>
 #include <iostream>
 #include <cstdlib>
-#include <string>
 
 #define BACKLOG 10
 #define PORT "8080"
@@ -58,6 +57,12 @@ int main() {
     int yes = 1; // This is used to set option value in "setsockopt()".
     struct sigaction sa; // Eliminate zombie processes. See man sigaction(2) and man wait(2).
     char client_addr_c[INET6_ADDRSTRLEN]; // Client address converted from binary.
+    char message[] = "HTTP/1.1 200 OK\n"
+        "Content-Type: text/html; charset=UTF-8\n\n"
+        "<!DOCTYPE html>\n"
+        "<html><head><title>Hello World!</title>\n"
+        "<body><h1>Hello World!</h1></body>\n"
+        "</html>";
 
     // Reset the value of hints
     std::memset(&hints, 0, sizeof hints);
@@ -137,6 +142,17 @@ int main() {
         // Convert client's address from binary to text form.
         inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr), client_addr_c, sizeof client_addr_c);
         std::cout << "Client connected from: " << client_addr_c << "\n";
+
+        if (!fork()) {
+            close(sockfd);
+            if (send(new_fd, message, sizeof message, 0) == -1) {
+                std::cerr << "send error\n";
+            }
+            std::cout << "Message sent\n";
+            close(new_fd);
+            exit(0);
+        }
+        close(new_fd);
     }
 
     return 0;
