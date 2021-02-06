@@ -63,9 +63,25 @@ int Listener::get_fd() {
     return fd;
 }
 
+// Connections class member declarations.
 Connections::Connections() {
     // Prepare space for array.
     fds = static_cast<struct pollfd *>(malloc(sizeof *fds * fd_size));
+}
+
+void Connections::add_new(int new_fd) {
+    fds[fd_count].fd = new_fd;
+    fds[fd_count].events = POLLIN; // Check if this socket is ready to be read from.
+
+    fd_count++;
+}
+
+struct pollfd* Connections::get_fds() {
+    return fds;
+}
+
+int Connections::get_fd_count() {
+    return fd_count;
 }
 
 int main() {
@@ -74,6 +90,23 @@ int main() {
     if (listener.get_fd() == -1) {
         std::cerr << "Error while trying to get listener socket.\n";
         exit(1);
+    }
+
+    // Instantiate connections object.
+    Connections connections;
+
+    // Add listener to connections.
+    connections.add_new(listener.get_fd());
+
+    // This is where the fun begins.
+    while (1) {
+        // Poll() returns number of sockets ready to be read from.
+        int poll_count = poll(connections.get_fds(), connections.get_fd_count(), -1);
+
+        if (poll_count == -1) {
+            raise_error("poll");
+            exit(1);
+        }
     }
 
     return 0;
