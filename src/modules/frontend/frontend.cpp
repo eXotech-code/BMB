@@ -5,6 +5,14 @@ void raise_error(std::string type) {
    std::cerr << type << " error: " << errno;
 }
 
+void *get_in_addr(struct sockaddr *sa) {
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
+    }
+
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
 // Listener class member definitions
 Listener::Listener() {
     int status; // Status of getaddrinfo.
@@ -85,27 +93,54 @@ int Connections::get_fd_count() {
 }
 
 int main() {
-    Listener listener; // Instantiate listener object.
+    int new_fd; // Newly accepted socket descriptor
+    struct sockaddr_storage client_addr; // New client address
+    socklen_t addrlen;
+    char client_ip[INET6_ADDRSTRLEN];
 
-    if (listener.get_fd() == -1) {
+    Listener obj_listener; // Instantiate listener object.
+    std::cout << "Listening on socket: " << obj_listener.get_fd() << " port: " << PORT << "\n";
+
+    if (obj_listener.get_fd() == -1) {
         std::cerr << "Error while trying to get listener socket.\n";
         exit(1);
     }
 
     // Instantiate connections object.
-    Connections connections;
+    Connections obj_connections;
 
     // Add listener to connections.
-    connections.add_new(listener.get_fd());
+    obj_connections.add_new(obj_listener.get_fd());
 
     // This is where the fun begins.
     while (1) {
         // Poll() returns number of sockets ready to be read from.
-        int poll_count = poll(connections.get_fds(), connections.get_fd_count(), -1);
+        int poll_count = poll(obj_connections.get_fds(), obj_connections.get_fd_count(), -1);
 
         if (poll_count == -1) {
             raise_error("poll");
             exit(1);
+        }
+
+        // Run through all the all the existing connections to see if there's data ready.
+        for (int i = 0; i < obj_connections.get_fd_count(); i++) {
+            // Check if data is ready to read.
+            if (obj_connections.get_fds()[i].revents == POLLIN) {
+
+                // If listener is ready get new connections.
+                if (obj_connections.get_fds()[i].fd == obj_listener.get_fd()) {
+                    addrlen = sizeof client_addr;
+                    new_fd = accept(obj_listener.get_fd(), (struct sockaddr *)&client_addr, &addrlen);
+
+                    if (new_fd == -1) {
+                        raise_error("accept");
+                    } else {
+                        obj_connections.add_new(new_fd);
+
+                        std::cout << "Got new connection from " << inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr), client_ip, INET6_ADDRSTRLEN) << " on socket: " << new_fd << "\n";
+                    }
+                }
+            }
         }
     }
 

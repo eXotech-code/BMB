@@ -2,6 +2,8 @@
 #include <sys/socket.h>
 #include <poll.h>
 #include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <string.h>
 #include <iostream>
 #include <string>
@@ -16,6 +18,8 @@
  * Well, I am a moron, but anyway. Let's get to it. */
 
 void raise_error(std::string type);
+// Get sockaddr_in or in6 depending on the ip version.
+void *get_in_addr(struct sockaddr *sa);
 
 /* So this is the listener class. It represents
  * the socket that listens for new connections. */
@@ -26,14 +30,6 @@ class Listener {
     private:
         int fd; // File descriptor for listener socket.
         struct addrinfo *ai; // "ai" is the result of getaddrinfo.
-};
-
-// Newly connected client class.
-class Client {
-    private:
-        int fd; // Socket file descriptor.
-        struct sockaddr_storage addr; // Client's address.
-        socklen_t addrlen;
 };
 
 // Connections on which we listen for new events using "poll()".
