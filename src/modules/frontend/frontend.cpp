@@ -84,6 +84,13 @@ void Connections::add_new(int new_fd) {
     fd_count++;
 }
 
+void Connections::delete_con(int i) {
+   // Replace provided file descriptor with current last.
+   fds[i] = fds[fd_count - 1];
+
+   fd_count--;
+}
+
 struct pollfd* Connections::get_fds() {
     return fds;
 }
@@ -97,6 +104,9 @@ int main() {
     struct sockaddr_storage client_addr; // New client address
     socklen_t addrlen;
     char client_ip[INET6_ADDRSTRLEN];
+
+    // TEMPORARY
+    char buffer[256];
 
     Listener obj_listener; // Instantiate listener object.
     std::cout << "Listening on socket: " << obj_listener.get_fd() << " port: " << PORT << "\n";
@@ -138,6 +148,28 @@ int main() {
                         obj_connections.add_new(new_fd);
 
                         std::cout << "Got new connection from " << inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr), client_ip, INET6_ADDRSTRLEN) << " on socket: " << new_fd << "\n";
+
+                        //TODO: Add a way to get HTTP GET request from Firefox just to see if it works.
+                    }
+                // If this is not a listener then it is client.
+                } else {
+                    int client_fd = obj_connections.get_fds()[i].fd; // Client's file descriptor. D.R.Y.
+
+                    int recv_bytes = recv(client_fd, &buffer, sizeof buffer, 0);
+
+                    if (recv_bytes <= 0) {
+                        if (recv_bytes == 0) {
+                            std::cout << "Connection closed by client.\n";
+                        // If we got -1 from "recv()".
+                        } else {
+                            raise_error("recv");
+                        }
+
+                        close(client_fd);
+                        obj_connections.delete_con(i);
+                    // If we got some data.
+                    } else {
+                       std::cout << buffer << "\n";
                     }
                 }
             }

@@ -7,6 +7,7 @@
 #include <string.h>
 #include <iostream>
 #include <string>
+#include <unistd.h>
 
 #define PORT "6969"
 #define BACKLOG 10
@@ -37,7 +38,7 @@ class Connections {
     public:
         Connections();
         void add_new(int new_fd);
-        void delete_con();
+        void delete_con(int i);
         struct pollfd* get_fds();
         int get_fd_count();
     private:
