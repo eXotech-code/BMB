@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+# Development compiled files
+src/modules/frontend/frontend
