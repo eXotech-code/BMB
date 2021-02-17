@@ -169,7 +169,9 @@ int main() {
                         obj_connections.delete_con(i);
                     // If we got some data.
                     } else {
-                       std::cout << buffer << "\n";
+                        std::string query = extract_query(buffer);
+                        if (!query.empty())
+                            std::cout << "Got a new query: " << query << "\n";
                     }
                 }
             }

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include "queries.h"
 
 #define PORT "6969"
 #define BACKLOG 10
