@@ -1,3 +1,6 @@
+#pragma once
+#ifndef FRONTEND_H
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <poll.h>
@@ -49,3 +52,5 @@ class Connections {
         int fd_size = 4; // Start with space for 4 connections.
         int fd_count = 0;
 };
+
+#endif /* FRONTEND_H */
