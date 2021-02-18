@@ -32,4 +32,4 @@
 *.app
 
 # Compiled development module files
-frontend
+src/modules/frontend
