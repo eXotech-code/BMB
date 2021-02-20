@@ -31,7 +31,7 @@ class Query
 {
     public:
         // Return an array of posts within a range specified in amount.
-        struct post *allPosts(int amount);
+        struct post *allPosts(int amount, struct post *hints);
 };
 
 #endif /* QUERIES_H */
