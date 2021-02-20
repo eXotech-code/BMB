@@ -8,33 +8,48 @@ std::string extract_query(std::string request) {
     while (ss >> word) {
         /* If the query starts with "/graphql"
          * that means we found what we were looking for */
-        if (word.find("/graphql") == 0) {
-           return word;
+        if (word.find("/graphql?") == 0) {
+           return word.erase(0, 9);
         }
     }
 
     return {};
 }
 
-// This is just a mockup of what would a query return.
-struct post *Query::allPosts(int amount) {
-    // TODO: Communicate to database module and get the data from there.
-    struct post temp_post;
+int unpack_query(std::string *query) {
+    // Unpack the request.
+    const std::string query_beginning = "query={";
+    if (query->find(query_beginning) == 0) {
+        query->erase(0, query_beginning.length());
+        // Remove last bracket.
+        query->erase(query->length() - 1, query->length());
+    } else {
+        // TODO: Examine why this code runs anyway. xD
+        std::cerr << "This is not a valid query!\n";
 
-    struct post *temp_post_list;
-    temp_post_list = new struct post[amount];
-
-    temp_post.title = "Temp";
-    temp_post.description = "Lorem ipsum dolor.";
-    temp_post.date = "January 1, 1970 at 0:00";
-    temp_post.content = "I love roses because they smell great. Whatever. This is just a test content.";
-
-    for (int i = 0; i < amount; i++) {
-        temp_post_list[i].title = temp_post.title;
-        temp_post_list[i].description = temp_post.description;
-        temp_post_list[i].date = temp_post.date;
-        temp_post_list[i].content = temp_post.content;
+        return 1;
     }
 
-    return temp_post_list;
+    return 0;
+}
+
+void *parse_query(std::string query) {
+    // If the query is in the wrong format, raise an error.
+    if (unpack_query(&query)) {
+        return nullptr;
+    }
+
+    std::stringstream ss(query);
+    std::string word;
+
+    // Structure containing results of query.
+    void *data = nullptr;
+
+    while (ss >> word) {
+
+    }
+}
+
+Post::Post(int post_id) {
+    id = post_id;
 }

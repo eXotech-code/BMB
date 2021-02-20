@@ -13,25 +13,44 @@
 // Checks if this is a valid query and extracts it from the HTTP request.
 std::string extract_query(std::string request);
 
-// Query resolver functions and structs.
+// Removes unnecessary stuff from the beginning and end of query.
+void unpack_query(std::string *query);
 
-// Post struct as per my notes.
-// TODO: Make a handler for image files and add a corresponding field in the stract for hero images.
-struct post
-{
-    std::string title;
-    std::string date;
-    std::string description;
-    std::string content;
-};
+/* Parses the query and makes calls to resolver functions.
+ * It returns a pointer to struct with results */
+void *resolve_query(std::string query);
 
-/* Query class with individual
- * resolvers for different query fields. */
-class Query
+// Query resolvers
+
+// Post class with resolver functions corresponding to different fields in the query.
+class Post
 {
     public:
-        // Return an array of posts within a range specified in amount.
-        struct post *allPosts(int amount, struct post *hints);
+        // We fetch the post's data based on an individual ID.
+        Post(int post_id);
+        // Resolver functions
+        std::string rTitle();
+        std::string rDate();
+        std::string rDescription();
+        std::string rContent();
+    private:
+        int id;
+        std::string title;
+        std::string date;
+        std::string description;
+        std::string content;
+};
+
+class Project
+{
+    public:
+        Project(int project_id);
+        // Resolver functions
+    private:
+        std::string name;
+        std::string description;
+        int progress;
+        // struct issue *kanban; <--- this will be there after GitHub module will be done.
 };
 
 #endif /* QUERIES_H */

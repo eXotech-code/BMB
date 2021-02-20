@@ -172,6 +172,10 @@ int main() {
                         std::string query = extract_query(buffer);
                         if (!query.empty())
                             std::cout << "Got a new query: " << query << "\n";
+
+                        // TEMPORARY FUNCTION TEST
+                        unpack_query(&query);
+                        std::cout << query << "\n";
                     }
                 }
             }
