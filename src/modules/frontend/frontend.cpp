@@ -174,8 +174,7 @@ int main() {
                             std::cout << "Got a new query: " << query << "\n";
 
                         // TEMPORARY FUNCTION TEST
-                        unpack_query(&query);
-                        std::cout << query << "\n";
+                        resolve_query(query);
                     }
                 }
             }
