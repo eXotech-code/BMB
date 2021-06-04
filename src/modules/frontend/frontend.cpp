@@ -169,12 +169,10 @@ int main() {
                         obj_connections.delete_con(i);
                     // If we got some data.
                     } else {
-                        std::string query = extract_query(buffer);
-                        if (!query.empty())
-                            std::cout << "Got a new query: " << query << "\n";
-
-                        // TEMPORARY FUNCTION TEST
-                        resolve_query(query);
+                        if (resolve_query(buffer) == -1)
+						{
+							std::cout << "Couldn't find any query in this data packet.\n";
+						}
                     }
                 }
             }
