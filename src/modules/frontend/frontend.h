@@ -1,3 +1,6 @@
+#pragma once
+#ifndef FRONTEND_H
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <poll.h>
@@ -8,6 +11,7 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include "queries.h"
 
 #define PORT "6969"
 #define BACKLOG 10
@@ -48,3 +52,5 @@ class Connections {
         int fd_size = 4; // Start with space for 4 connections.
         int fd_count = 0;
 };
+
+#endif /* FRONTEND_H */
