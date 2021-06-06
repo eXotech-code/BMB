@@ -1,7 +1,6 @@
 #include "frontend.h"
 
-void raise_error(std::string type) {
-   int error_code = errno;
+void raise_error(const std::string &type) {
    std::cerr << type << " error: " << errno;
 }
 
@@ -13,26 +12,54 @@ void *get_in_addr(struct sockaddr *sa) {
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+bool key_pressed(char key)
+{
+    // Struct to listen for key presses
+    struct pollfd fds[1];
+    fds[0].fd = 0; // Standard input (stdin)
+    fds[0].events = POLLIN; // Check if data is ready to read
+    fds[0].revents = 0;
+
+    int is_ready = poll(fds, 1, 0);
+
+    if (is_ready && fds[0].revents & POLLIN) {
+        char buff[1024]; // Buffer of chars from stdin.
+        memset(buff, 0, sizeof(buff));
+        ssize_t read_bytes = read(0, buff, sizeof(buff) - 1);
+
+        /* Loop through the buffer to see if certain key has
+         * been pressed. */
+        for (int i = 0; i < read_bytes; i++) {
+            if (buff[i] == key) {
+                std::cout << "Exiting...\n";
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 // Listener class member definitions
 Listener::Listener() {
     int status; // Status of getaddrinfo.
-    struct addrinfo hints;
+    struct addrinfo hints = { 0 };
     struct addrinfo *p; // // *p is used to loop through linked list of addresses at *ai
     int yes = 1; // This is used to set option value in "setsockopt()".
 
-    memset(&hints, 0, sizeof hints);
+    //memset(&hints, 0, sizeof hints); // This is the same as initializing struct with zeros.
     hints.ai_family = AF_UNSPEC; // Use either IPv4 or IPv6
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE; // localhost
 
     // Pack the *ai with getaddrinfo() and lookup the error code on failure
-    if ((status = getaddrinfo(NULL, PORT, &hints, &ai)) != 0) {
+    if ((status = getaddrinfo(nullptr, PORT, &hints, &ai)) != 0) {
        std::cerr << "getaddrinfo error for listener: " << gai_strerror(status) << "\n";
        exit(1); // Close all file descriptors and terminate program.
     }
 
     // Use first result from getaddrinfo that works.
-    for (p = ai; p != NULL; p = p->ai_next) {
+    for (p = ai; p != nullptr; p = p->ai_next) {
        fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
        if (fd == -1) {
            continue;
@@ -56,7 +83,7 @@ Listener::Listener() {
     freeaddrinfo(ai);
 
     // If the socket couldn't bind. Set fd to -1. That will raise an error.
-    if (p == NULL) {
+    if (p == nullptr) {
         fd = -1;
     }
 
@@ -67,7 +94,7 @@ Listener::Listener() {
     }
 }
 
-int Listener::get_fd() {
+int Listener::get_fd() const {
     return fd;
 }
 
@@ -95,13 +122,13 @@ struct pollfd* Connections::get_fds() {
     return fds;
 }
 
-int Connections::get_fd_count() {
+int Connections::get_fd_count() const {
     return fd_count;
 }
 
 int main() {
     int new_fd; // Newly accepted socket descriptor
-    struct sockaddr_storage client_addr; // New client address
+    struct sockaddr_storage client_addr = { 0 }; // New client address
     socklen_t addrlen;
     char client_ip[INET6_ADDRSTRLEN];
 
@@ -110,6 +137,7 @@ int main() {
 
     Listener obj_listener; // Instantiate listener object.
     std::cout << "Listening on socket: " << obj_listener.get_fd() << " port: " << PORT << "\n";
+    std::cout << "Press 'q' to exit.\n";
 
     if (obj_listener.get_fd() == -1) {
         std::cerr << "Error while trying to get listener socket.\n";
@@ -123,9 +151,9 @@ int main() {
     obj_connections.add_new(obj_listener.get_fd());
 
     // This is where the fun begins.
-    while (1) {
+    while (true) {
         // Poll() returns number of sockets ready to be read from.
-        int poll_count = poll(obj_connections.get_fds(), obj_connections.get_fd_count(), -1);
+        int poll_count = poll(obj_connections.get_fds(), obj_connections.get_fd_count(), 100);
 
         if (poll_count == -1) {
             raise_error("poll");
@@ -148,14 +176,12 @@ int main() {
                         obj_connections.add_new(new_fd);
 
                         std::cout << "Got new connection from " << inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr), client_ip, INET6_ADDRSTRLEN) << " on socket: " << new_fd << "\n";
-
-                        //TODO: Add a way to get HTTP GET request from Firefox just to see if it works.
                     }
                 // If this is not a listener then it is client.
                 } else {
                     int client_fd = obj_connections.get_fds()[i].fd; // Client's file descriptor. D.R.Y.
 
-                    int recv_bytes = recv(client_fd, &buffer, sizeof buffer, 0);
+                    ssize_t recv_bytes = recv(client_fd, &buffer, sizeof buffer, 0);
 
                     if (recv_bytes <= 0) {
                         if (recv_bytes == 0) {
@@ -177,6 +203,9 @@ int main() {
                 }
             }
         }
+
+        if (key_pressed('q'))
+            break;
     }
 
     return 0;
