@@ -11,11 +11,8 @@
  * needed to parse HTTP requests and queries
  * from the frontend. */
 
-// Returns query extracted from raw buffer
-std::string extract_query(const std::string &b);
-
-// Retrieve id from argument field in query
-int get_id(const std::string &query, std::string::size_type &end_id_pos);
+// Isolate API request type from the rest of the buffer.
+std::string isolate(std::string b);
 
 /* Struct to be sent to the main module
  * and filed with data. */
@@ -28,15 +25,29 @@ struct post {
     std::string content;
 };
 
-// Replaces all occurences of a string with a space.
-void removeOccurences(const std::string &seq, std::string &s);
+struct project {
+    unsigned int id;
+    std::string name;
+    std::string description;
+    unsigned int progress;
+    // Issues will be fetched by frontend based on id.
+};
 
-std::vector<std::string> separate_args(std::string params);
-// This will only make requests for posts for now
-struct post *compile_request(std::vector<std::string> args);
+struct issue {
+    unsigned int id;
+    std::string title;
+    std::string contents;
+    unsigned int state;
+    unsigned int project_id;
+};
 
-/* Parses the query and makes calls to resolver functions.
- * It returns a pointer to struct with results */
-int resolve_query(char *query); // For now it just return 0 on success and -1 on error
+// Sending requests to main module and populating struct array with data.
+int sendRequest(struct post *po);
+int sendRequest(struct project *pr);
+int sendRequest(struct issue *is);
+
+/* Compares query to list of supported queries and sends appropriate request
+ * to the main module. Then, it returns a JSON string with results. */
+std::string resolveQuery(char *query); // Returns empty string on error.
 
 #endif /* QUERIES_H */
