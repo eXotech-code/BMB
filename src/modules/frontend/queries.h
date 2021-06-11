@@ -12,7 +12,7 @@
  * from the frontend. */
 
 // Isolate API request type from the rest of the buffer.
-std::string isolate(std::string b);
+std::string isolate(const std::string &b);
 
 /* Struct to be sent to the main module
  * and filed with data. */
@@ -44,7 +44,7 @@ struct issue {
 // Sending requests to main module and populating struct array with data.
 int sendRequest(struct post *po);
 int sendRequest(struct project *pr);
-int sendRequest(struct issue *is);
+int sendRequest(struct issue *is); // Struct will already have "project_id" field filled.
 
 /* Compares query to list of supported queries and sends appropriate request
  * to the main module. Then, it returns a JSON string with results. */
