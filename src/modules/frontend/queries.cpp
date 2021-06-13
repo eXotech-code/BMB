@@ -26,22 +26,66 @@ void initializeIssues(const int &buff_size, const std::string &api_call, struct 
     }
 }
 
-int sendRequest(struct post *po) {
+int getClientSocket() {
+    int sock; // This module socket's file descriptor.
+    struct sockaddr_un client = { 0 }; // Info about this socket.
+
+    // Fill address and family info.
+    client.sun_family = AF_UNIX;
+    // "sun_path" is not directly assignable, so I have to use strncpy().
+    std::size_t sock_path_len = std::strlen(SOCK_PATH);
+    std::strncpy(client.sun_path, SOCK_PATH, sock_path_len);
+
+    // Get file descriptor.
+    if ((sock = socket(client.sun_family, SOCK_STREAM, 0)) == -1) {
+        perror("Could not get a file descriptor for UNIX socket");
+        return -1;
+    }
+
+    // Connect to main module.
+    if ((connect(sock, (struct sockaddr *)&client, sock_path_len + sizeof(client.sun_family))) == -1) {
+        perror("Could not connect to main module's socket");
+        return -1;
+    }
+    std::cout << "Established a connection to main module.\n";
+
+    return sock;
+}
+
+int sendToMain(const char *message, const int &sock) {
+    if (send(sock, message, strlen(message), 0) == -1) {
+        perror("Could not send request to main");
+        return -1;
+    }
+
+    return 0;
+}
+
+int sendRequest(struct post *po, const int &sock) {
     std::cout << "Fetching posts...\n";
+    if (sendToMain("posts", sock) == -1) {
+        return -1;
+    }
     return 0;
 }
 
-int sendRequest(struct project *pr) {
+int sendRequest(struct project *pr, const int &sock) {
     std::cout << "Fetching projects...\n";
+    if (sendToMain("projects", sock) == -1) {
+        return -1;
+    }
     return 0;
 }
 
-int sendRequest(struct issue *is) {
+int sendRequest(struct issue *is, const int &sock) {
     std::cout << "Fetching issues that belong to project with id = " << is[0].project_id << "\n";
+    if (sendToMain(("issues/" + std::to_string(is[0].project_id)).c_str(), sock) == -1) {
+        return -1;
+    }
     return 0;
 }
 
-std::string resolveQuery(char *buff) {
+std::string resolveQuery(char *buff, const int &sock) {
 
 	// First, convert char array into string
 	std::string b(buff);
@@ -57,15 +101,15 @@ std::string resolveQuery(char *buff) {
 
 	if (api_call == "posts") {
         auto *data = new struct post[buff_size];
-        sendRequest(data);
+        if (sendRequest(data, sock) == -1)
+            return "";
     }
 
 	if (api_call == "projects") {
         auto *data = new struct project[buff_size];
-        sendRequest(data);
-    } else {
-	    return ""; // API call text has wrong format or that API endpoint is not supported.
-	}
+        if (sendRequest(data, sock) == -1)
+            return "";
+    }
 
 	// This one's different, because project id will be in the url.
 	if (api_call.find("issues/") != std::string::npos) {
@@ -73,8 +117,11 @@ std::string resolveQuery(char *buff) {
 
 	    // Fill all structs in array with project id_numbers.
         initializeIssues(buff_size, api_call, data);
-        sendRequest(data);
-	}
+        if (sendRequest(data, sock) == -1)
+            return "";
+	} else {
+        return ""; // API call text has wrong format or that API endpoint is not supported.
+    }
 
 	return api_call;
 }

@@ -1,7 +1,7 @@
 #include "frontend.h"
 
 void raise_error(const std::string &type) {
-   std::cerr << type << " error: " << errno;
+   std::cerr << type << " error: " << errno << " - " << strerror(errno);
 }
 
 void *get_in_addr(struct sockaddr *sa) {
@@ -135,6 +135,9 @@ int main() {
     // TEMPORARY
     char buffer[256];
 
+    // Socket for passing information between modules.
+    int unix_sock;
+
     Listener obj_listener; // Instantiate listener object.
     std::cout << "Listening on socket: " << obj_listener.get_fd() << " port: " << PORT << "\n";
     std::cout << "Press 'q' to exit.\n";
@@ -149,6 +152,13 @@ int main() {
 
     // Add listener to connections.
     obj_connections.add_new(obj_listener.get_fd());
+
+    /* Connect to main module to communicate requests and responses
+     * between modules. */
+    if ((unix_sock = getClientSocket()) == -1) {
+        raise_error("unix socket");
+        exit(1);
+    }
 
     // This is where the fun begins.
     while (true) {
@@ -197,7 +207,7 @@ int main() {
                     } else {
                         std::string data;
 
-                        if ((data = resolveQuery(buffer)).empty())
+                        if ((data = resolveQuery(buffer, unix_sock)).empty())
 						{
 							std::cout << "Couldn't find any query in this data packet.\n";
 						} else {

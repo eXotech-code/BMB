@@ -6,10 +6,16 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <cstring>
+#include <cstdio>
 
 /* This file contains all of the logic
  * needed to parse HTTP requests and queries
  * from the frontend. */
+
+#define SOCK_PATH "~/bmb_socket"
 
 // Isolate API request type from the rest of the buffer.
 std::string isolate(const std::string &b);
@@ -42,12 +48,14 @@ struct issue {
 };
 
 // Sending requests to main module and populating struct array with data.
-int sendRequest(struct post *po);
-int sendRequest(struct project *pr);
-int sendRequest(struct issue *is); // Struct will already have "project_id" field filled.
+int getClientSocket(); // Returns a connected UNIX socket.
+int sendToMain(const char *message, const int &sock); // Send a message to main through UNIX sockets.
+int sendRequest(struct post *po, const int &sock);
+int sendRequest(struct project *pr, const int &sock);
+int sendRequest(struct issue *is, const int &sock); // Struct will already have "project_id" field filled.
 
 /* Compares query to list of supported queries and sends appropriate request
  * to the main module. Then, it returns a JSON string with results. */
-std::string resolveQuery(char *query); // Returns empty string on error.
+std::string resolveQuery(char *query, const int &sock); // Returns empty string on error.
 
 #endif /* QUERIES_H */
