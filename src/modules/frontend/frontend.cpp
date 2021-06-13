@@ -53,7 +53,7 @@ Listener::Listener() {
     hints.ai_flags = AI_PASSIVE; // localhost
 
     // Pack the *ai with getaddrinfo() and lookup the error code on failure
-    if ((status = getaddrinfo(nullptr, PORT, &hints, &ai)) != 0) {
+    if ((status = getaddrinfo(nullptr, PORT, &hints, &ai))) {
        std::cerr << "getaddrinfo error for listener: " << gai_strerror(status) << "\n";
        exit(1); // Close all file descriptors and terminate program.
     }
@@ -67,11 +67,11 @@ Listener::Listener() {
 
        /* Set options for that socket.
         * "SOL_SOCKET" means that "setsockopt" sets options at socket level. */
-       if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) != 0) {
+       if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int))) {
            raise_error("setsockopt");
        }
 
-       if (bind(fd, p->ai_addr, p->ai_addrlen) != 0) {
+       if (bind(fd, p->ai_addr, p->ai_addrlen)) {
            raise_error("bind");
            continue;
        }
@@ -88,7 +88,7 @@ Listener::Listener() {
     }
 
     // Listen for incoming connections.
-    if (listen(fd, BACKLOG) != 0) {
+    if (listen(fd, BACKLOG)) {
         raise_error("listen");
         fd = -1;
     }
