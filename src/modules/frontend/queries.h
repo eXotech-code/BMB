@@ -6,16 +6,14 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <sys/socket.h>
-#include <sys/un.h>
 #include <cstring>
 #include <cstdio>
+#include "../../defines.h"
+#include "../sockets.h"
 
 /* This file contains all of the logic
  * needed to parse HTTP requests and queries
  * from the frontend. */
-
-#define SOCK_PATH "~/bmb_socket"
 
 // Isolate API request type from the rest of the buffer.
 std::string isolate(const std::string &b);

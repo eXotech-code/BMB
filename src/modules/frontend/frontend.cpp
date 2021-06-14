@@ -133,7 +133,7 @@ int main() {
     char client_ip[INET6_ADDRSTRLEN];
 
     // TEMPORARY
-    char buffer[256];
+    char buffer[BUFF_SIZE];
 
     // Socket for passing information between modules.
     int unix_sock;

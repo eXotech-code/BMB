@@ -12,9 +12,9 @@
 #include <string>
 #include <unistd.h>
 #include "queries.h"
+#include "../../defines.h"
 
 #define PORT "6969"
-#define BACKLOG 10
 
 /* My third attempt to make this fucking server work
  * This time we will use OOP since this is C++ roght?
