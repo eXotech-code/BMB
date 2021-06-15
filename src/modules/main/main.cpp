@@ -32,15 +32,26 @@ int Server::listen() const {
     return ::listen(fd, BACKLOG);
 }
 
-Client *Server::accept() const{
+int Server::accept() const{
     struct sockaddr_un client_info = { 0 };
     socklen_t s = sizeof(client_info);
-    return new Client(::accept(fd, (struct sockaddr *)&client_info, &s));
+
+    int new_client = ::accept(fd, (struct sockaddr *)&client_info, &s);
+    if (new_client == -1) {
+        perror("Not possible to accept new connection");
+        throw std::system_error(errno, std::system_category());
+    }
+
+    return new_client;
 }
 
 // Definitions of "Client" class members.
 Client::Client(int cl_fd) {
     fd = cl_fd;
+}
+
+int Client::getFd() const {
+    return fd;
 }
 
 std::string Client::get_data() const{
@@ -83,17 +94,18 @@ int main() {
 
     // Just to check if everything works correctly.
     while (true) {
-        Client *c = serv->accept();
+        std::optional<Client> c;
+
+        try {
+            c.emplace(serv->accept());
+        } catch (std::system_error &e) {
+            exit(1);
+        }
+        std::cout << "New connection on socket: " << c->getFd() << "\n";
 
         // Send message from client to stdout
         std::string data = c->get_data();
         std::cout << data << "\n";
-        /*try {
-            c->sendData(data);
-        } catch (std::system_error &e) {
-            std::cerr << "Not possible to send data at this time: " << e.what() << "\n";
-            exit(1);
-        }*/
     }
 
     return 0;

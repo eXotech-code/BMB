@@ -14,6 +14,7 @@ class Client {
 public:
      /* Assigns client's socket to it's member variable. */
     explicit Client(int cl_fd);
+    int getFd() const;
     std::string get_data() const;
     void sendData(const std::string &data) const;
     /* Closes file descriptor associated with
@@ -40,9 +41,9 @@ public:
      * connections. As always, returns -1
      * on error. */
     int listen() const;
-    /* Accepts a new connection and creates a Client object
-     * with its file descriptor */
-     Client *accept() const;
+    /* Accepts a new connection and returns file
+     * descriptor of client's socket */
+     int accept() const;
 
 private:
     int fd; // Socket file descriptor.
