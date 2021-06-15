@@ -33,4 +33,4 @@
 
 # Compiled development module files
 src/modules/frontend/frontend
-src/modules/frontend/main
+src/modules/main/main
