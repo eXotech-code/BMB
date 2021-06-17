@@ -1,16 +1,27 @@
 #include "main.h"
-#include "../sockets.h"
 
 // Definitions of "Server" class members
 Server::Server() {
-    if ((fd = sock()) == -1)
-        throw std::system_error(errno, std::system_category());
+    fd = 0;
+}
 
-    if (bindSock() == -1)
-        throw std::system_error(errno, std::system_category());
+int Server::start() {
+    if ((fd = sock()) == -1) {
+        perror("Could not obtain a socket file descriptor.");
+        return -1;
+    }
 
-    if (listen() == -1)
-        throw std::system_error(errno, std::system_category());
+    if (bindSock() == -1) {
+        perror("Could not bind address of UNIX socket to file descriptor");
+        return -1;
+    }
+
+    if (listen() == -1) {
+        perror("Could not start listening for new connections");
+        return -1;
+    }
+
+    return 0;
 }
 
 int Server::sock() {
@@ -32,14 +43,13 @@ int Server::listen() const {
     return ::listen(fd, BACKLOG);
 }
 
-int Server::accept() const{
+int Server::accept() const {
     struct sockaddr_un client_info = { 0 };
     socklen_t s = sizeof(client_info);
 
     int new_client = ::accept(fd, (struct sockaddr *)&client_info, &s);
     if (new_client == -1) {
         perror("Not possible to accept new connection");
-        throw std::system_error(errno, std::system_category());
     }
 
     return new_client;
@@ -54,10 +64,26 @@ int Client::getFd() const {
     return fd;
 }
 
-std::string Client::get_data() const{
+int Client::handleCon() const {
     ssize_t bytes; // Received bytes.
-    std::string data;
     std::vector<char> buff(BUFF_SIZE);
+    std::string data;
+
+    // If the client has not disconnected, read and handle what it had sent.
+    while (recv(fd, &buff[0], buff.size(), MSG_PEEK)) {
+        if ((data = getData(bytes, buff)).empty())
+            return -1;
+
+        std::cout << data << "\n";
+    }
+
+    std::cout << "Client on socket " << fd << " has disconnected.\n";
+
+    return 0;
+}
+
+std::string Client::getData(ssize_t bytes, std::vector<char> buff) const{
+    std::string data;
 
     do {
         if ((bytes = recv(fd, &buff[0], buff.size(), 0)) == -1) {
@@ -84,28 +110,24 @@ Client::~Client() {
 
 int main() {
     // Create server
-    std::optional<Server> serv;
-    try {
-        serv.emplace();
-    } catch (std::system_error &e) {
-        std::cerr << "Could not instantiate a server: " << e.what() << "\n";
-        exit(1);
+    Server serv;
+    if (serv.start() == -1) {
+        std::cerr << "Could not instantiate a server.\n";
+        return -1;
     }
 
     // Just to check if everything works correctly.
     while (true) {
-        std::optional<Client> c;
 
-        try {
-            c.emplace(serv->accept());
-        } catch (std::system_error &e) {
-            exit(1);
-        }
-        std::cout << "New connection on socket: " << c->getFd() << "\n";
+        // Create client and assign newly accepted fd to it
+        Client c(serv.accept());
+        if (c.getFd() == -1)    // If accepting failed
+            return -1;
 
-        // Send message from client to stdout
-        std::string data = c->get_data();
-        std::cout << data << "\n";
+        std::cout << "New connection on socket: " << c.getFd() << "\n";
+
+        // Receive messages
+        c.handleCon();
     }
 
     return 0;

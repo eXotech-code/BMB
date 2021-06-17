@@ -1,13 +1,12 @@
 #pragma once
 #ifndef MAIN_H
 
-#include <system_error>
 #include <unistd.h>
 #include <string>
 #include <vector>
 #include <iostream>
-#include <optional>
 #include "../../defines.h"
+#include "../sockets.h"
 
 // Client that connects to main module.
 class Client {
@@ -15,7 +14,14 @@ public:
      /* Assigns client's socket to it's member variable. */
     explicit Client(int cl_fd);
     int getFd() const;
-    std::string get_data() const;
+    /* Handles connection with client.
+     * Returns 0 when client disconnects from server
+     * or -1 on error. */
+    int handleCon() const;
+    /* Gets the whole data packet even if it is bigger than
+     * size of the buffer. Returns a string containing message from
+     * client. On error it returns an empty string. */
+    std::string getData(ssize_t bytes, std::vector<char> buff) const;
     void sendData(const std::string &data) const;
     /* Closes file descriptor associated with
      * itself */
@@ -27,9 +33,10 @@ private:
 // Class representing an UNIX socket server.
 class Server {
 public:
+    Server();
     /* Gets socket's file descriptor, binds it and
      * sets it up for listening. */
-    Server();
+    int start();
     /* Finds socket file descriptor.
      * Returns -1 on error. */
     static int sock();

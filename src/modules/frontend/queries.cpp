@@ -53,7 +53,9 @@ int getClientSocket() {
 }
 
 int sendToMain(const char *message, const int &sock) {
-    if (send(sock, message, strlen(message), 0) == -1) {
+    /* Check if main closed socket on us just in case.
+     * That's why we are using "MSG_NOSIGNAL" flag. */
+    if (send(sock, message, strlen(message), MSG_NOSIGNAL) == -1) {
         perror("Could not send request to main");
         return -1;
     }
@@ -63,7 +65,7 @@ int sendToMain(const char *message, const int &sock) {
 
 int sendRequest(struct post *po, const int &sock) {
     std::cout << "Fetching posts...\n";
-    if (sendToMain("posts", sock) == -1) {
+    if (sendToMain("f posts", sock) == -1) {
         return -1;
     }
     return 0;
@@ -71,7 +73,7 @@ int sendRequest(struct post *po, const int &sock) {
 
 int sendRequest(struct project *pr, const int &sock) {
     std::cout << "Fetching projects...\n";
-    if (sendToMain("projects", sock) == -1) {
+    if (sendToMain("f projects", sock) == -1) {
         return -1;
     }
     return 0;
@@ -79,7 +81,7 @@ int sendRequest(struct project *pr, const int &sock) {
 
 int sendRequest(struct issue *is, const int &sock) {
     std::cout << "Fetching issues that belong to project with id = " << is[0].project_id << "\n";
-    if (sendToMain(("issues/" + std::to_string(is[0].project_id)).c_str(), sock) == -1) {
+    if (sendToMain(("f issues/" + std::to_string(is[0].project_id)).c_str(), sock) == -1) {
         return -1;
     }
     return 0;
@@ -97,7 +99,7 @@ std::string resolveQuery(char *buff, const int &sock) {
 
 	/* Create appropriate struct according to which API is
 	 * frontend trying to access. */
-	const int buff_size = 64;
+	const int buff_size = BUFF_SIZE;
 
 	if (api_call == "posts") {
         auto *data = new struct post[buff_size];
@@ -117,6 +119,7 @@ std::string resolveQuery(char *buff, const int &sock) {
 
 	    // Fill all structs in array with project id_numbers.
         initializeIssues(buff_size, api_call, data);
+        // TODO: Find out why this function dies after 9 connections.
         if (sendRequest(data, sock) == -1)
             return "";
 	} else {
