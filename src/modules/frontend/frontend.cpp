@@ -160,6 +160,9 @@ int main() {
         exit(1);
     }
 
+    // Add main to list of connections.
+    obj_connections.add_new(unix_sock);
+
     // This is where the fun begins.
     while (true) {
         // Poll() returns number of sockets ready to be read from.

@@ -64,20 +64,25 @@ int Client::getFd() const {
     return fd;
 }
 
-int Client::handleCon() const {
+int Client::handleCon() {
     ssize_t bytes; // Received bytes.
     std::vector<char> buff(BUFF_SIZE);
     std::string data;
 
     // If the client has not disconnected, read and handle what it had sent.
     while (recv(fd, &buff[0], buff.size(), MSG_PEEK)) {
+
+        // Establish which module is connected.
+        // TODO: After we switch to polling for connections do this only once.
+        identity = identity_map[buff[0] - '0'];
+
         if ((data = getData(bytes, buff)).empty())
             return -1;
 
-        std::cout << data << "\n";
+        std::cout << identity << " sent: " << data << "\n";
     }
 
-    std::cout << "Client on socket " << fd << " has disconnected.\n";
+    std::cout << identity << " module on socket " << fd << " has disconnected.\n";
 
     return 0;
 }

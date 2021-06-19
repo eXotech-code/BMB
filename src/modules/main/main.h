@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <map>
 #include "../../defines.h"
 #include "../sockets.h"
 
@@ -17,7 +18,7 @@ public:
     /* Handles connection with client.
      * Returns 0 when client disconnects from server
      * or -1 on error. */
-    int handleCon() const;
+    int handleCon();
     /* Gets the whole data packet even if it is bigger than
      * size of the buffer. Returns a string containing message from
      * client. On error it returns an empty string. */
@@ -28,6 +29,13 @@ public:
     ~Client();
 private:
     int fd;
+    std::map<int, std::string> identity_map {
+            {1, "frontend"},
+            {2, "database"},
+            {3, "markdown-compiler"},
+            {4, "github"}
+        };
+    std::string identity;
 };
 
 // Class representing an UNIX socket server.

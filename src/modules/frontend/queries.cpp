@@ -65,7 +65,7 @@ int sendToMain(const char *message, const int &sock) {
 
 int sendRequest(struct post *po, const int &sock) {
     std::cout << "Fetching posts...\n";
-    if (sendToMain("f posts", sock) == -1) {
+    if (sendToMain("1 posts", sock) == -1) {
         return -1;
     }
     return 0;
@@ -73,7 +73,7 @@ int sendRequest(struct post *po, const int &sock) {
 
 int sendRequest(struct project *pr, const int &sock) {
     std::cout << "Fetching projects...\n";
-    if (sendToMain("f projects", sock) == -1) {
+    if (sendToMain("1 projects", sock) == -1) {
         return -1;
     }
     return 0;
@@ -81,7 +81,7 @@ int sendRequest(struct project *pr, const int &sock) {
 
 int sendRequest(struct issue *is, const int &sock) {
     std::cout << "Fetching issues that belong to project with id = " << is[0].project_id << "\n";
-    if (sendToMain(("f issues/" + std::to_string(is[0].project_id)).c_str(), sock) == -1) {
+    if (sendToMain(("1 issues/" + std::to_string(is[0].project_id)).c_str(), sock) == -1) {
         return -1;
     }
     return 0;

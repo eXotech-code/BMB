@@ -11,6 +11,7 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include <cstdlib>
 #include "queries.h"
 #include "../../defines.h"
 
