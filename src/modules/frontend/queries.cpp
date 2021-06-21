@@ -87,7 +87,21 @@ int sendRequest(struct issue *is, const int &sock) {
     return 0;
 }
 
-std::string resolveQuery(char *buff, const int &sock) {
+Queries::Queries(int main) {
+    main_sock = main;
+}
+
+void Queries::add(std::string query, struct pollfd *cl_pfd) {
+    /* Add this query to queue linked with socket file descriptor
+     * that belongs to the client that sent it. */
+    queue.push_back({cl_pfd->fd, query, ""});
+
+    /* Set socket that sent this query to POLLOUT.
+	 * So that we know when we can send our response to it. */
+    cl_pfd->events = POLLOUT;
+}
+
+int Queries::resolve(char *buff, struct pollfd &cl_pfd) {
 
 	// First, convert char array into string
 	std::string b(buff);
@@ -95,7 +109,7 @@ std::string resolveQuery(char *buff, const int &sock) {
 	// Isolate api path from the request
 	std::string api_call = isolate(b);
 	if (api_call.empty())
-	    return "";
+	    return -1;
 
 	/* Create appropriate struct according to which API is
 	 * frontend trying to access. */
@@ -103,14 +117,14 @@ std::string resolveQuery(char *buff, const int &sock) {
 
 	if (api_call == "posts") {
         auto *data = new struct post[buff_size];
-        if (sendRequest(data, sock) == -1)
-            return "";
+        if (sendRequest(data, main_sock) == -1)
+            return -1;
     }
 
 	if (api_call == "projects") {
         auto *data = new struct project[buff_size];
-        if (sendRequest(data, sock) == -1)
-            return "";
+        if (sendRequest(data, main_sock) == -1)
+            return -1;
     }
 
 	// This one's different, because project id will be in the url.
@@ -119,11 +133,14 @@ std::string resolveQuery(char *buff, const int &sock) {
 
 	    // Fill all structs in array with project id_numbers.
         initializeIssues(buff_size, api_call, data);
-        if (sendRequest(data, sock) == -1)
-            return "";
+        if (sendRequest(data, main_sock) == -1)
+            return -1;
 	} else {
-        return ""; // API call text has wrong format or that API endpoint is not supported.
+        return -1; // API call text has wrong format or that API endpoint is not supported.
     }
 
-	return api_call;
+	// Add this query to queue.
+    add(api_call, cl_pfd);
+
+	return 0;
 }

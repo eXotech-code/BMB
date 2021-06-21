@@ -181,6 +181,9 @@ int main() {
     // Add main to list of connections.
     obj_connections.add_new(unix_sock);
 
+    // Create an object responsible for keeping track of queries.
+    Queries q(unix_sock);
+
     // This is where the fun begins.
     while (true) {
         // Poll() returns number of sockets ready to be read from.
@@ -193,46 +196,68 @@ int main() {
 
         // Run through all the all the existing connections to see if there's data ready.
         for (int i = 0; i < obj_connections.get_fd_count(); i++) {
+            // Current pfd struct.
+            auto conn = obj_connections.get_fds()[i];
+
             // Check if data is ready to read.
-            if (obj_connections.get_fds()[i].revents & POLLIN) {
+            if (conn.revents & POLLIN) {
 
                 // If listener is ready get new connections.
-                if (obj_connections.get_fds()[i].fd == obj_listener.get_fd()) {
+                if (conn.fd == obj_listener.get_fd()) {
                     addrlen = sizeof client_addr;
-                    new_fd = accept(obj_listener.get_fd(), (struct sockaddr *)&client_addr, &addrlen);
+                    new_fd = accept(obj_listener.get_fd(), (struct sockaddr *) &client_addr, &addrlen);
 
                     if (new_fd == -1) {
                         raise_error("accept");
                     } else {
                         obj_connections.add_new(new_fd);
 
-                        std::cout << "Got new connection from " << inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr), client_ip, INET6_ADDRSTRLEN) << " on socket: " << new_fd << "\n";
+                        std::cout << "Got new connection from "
+                                  << inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *) &client_addr),
+                                               client_ip, INET6_ADDRSTRLEN) << " on socket: " << new_fd << "\n";
                     }
-                // If this is not a listener then it is client.
-                } else {
-                    int client_fd = obj_connections.get_fds()[i].fd; // Client's file descriptor. D.R.Y.
 
-                    ssize_t recv_bytes = recv(client_fd, &buffer, sizeof buffer, 0);
+                }
+                // If this is main module.
+                else if (conn.fd == unix_sock) {
+                    // TODO:
+                    // 1. Separate request string from response string.
+                    // 2. q.addResponse(request, response)
+                    // 3. ???
+                    // 4. Profit
+                }
+                // If this is not main module nor listener then it is client.
+                else {
+                    ssize_t recv_bytes = recv(conn.fd, &buffer, sizeof buffer, 0);
 
                     if (recv_bytes <= 0) {
                         if (recv_bytes == -1)
                             raise_error("recv");
 
                         std::cout << "Connection closed by client.\n";
-                        close(client_fd);
+                        close(conn.fd);
                         obj_connections.delete_con(i);
                     // If we got some data.
                     } else {
-                        std::string data;
-
-                        if ((data = resolveQuery(buffer, unix_sock)).empty())
+                        if (q.resolve(buffer, obj_connections.get_fds()[i]))
 						{
 							std::cout << "Couldn't find any query in this data packet.\n";
 						} else {
-                            std::cout << data << "\n";
+                            std::cout << "Added new query to queue.\n";
                         }
                     }
                 }
+            }
+
+            // If it is one of the sockets that we marked to send them data...
+            if (conn.revents & POLLOUT) {
+                // TODO:
+                // 1. q.getResponse(conn.fd)
+                // 2. Send that response to this file descriptor.
+                // 3. q.remove(conn.fd)
+                // 4. Mark this client again as POLLIN
+                // 5. ???
+                // 6. Profit
             }
         }
 
