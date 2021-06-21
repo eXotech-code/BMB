@@ -47,10 +47,12 @@ class Listener {
 class Connections {
     public:
         Connections();
+        void resize_fds(int new_size);
         void add_new(int new_fd);
         void delete_con(int i);
         struct pollfd* get_fds();
         int get_fd_count() const;
+        ~Connections();
     private:
         /* Array containing file descriptors and
          * events for which we should listen. */

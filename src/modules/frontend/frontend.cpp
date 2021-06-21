@@ -104,11 +104,23 @@ Connections::Connections() {
     fds = static_cast<struct pollfd *>(malloc(sizeof *fds * fd_size));
 }
 
+void Connections::resize_fds(int new_size) {
+    if (void *mem = realloc(fds, new_size * sizeof fds[0]))
+        fds = static_cast<pollfd *>(mem);
+    else
+        throw std::bad_alloc();
+}
+
 void Connections::add_new(int new_fd) {
     fds[fd_count].fd = new_fd;
     fds[fd_count].events = POLLIN; // Check if this socket is ready to be read from.
 
     fd_count++;
+
+    // Add space for more connections if needed.
+    if (fd_count == fd_size) {
+        resize_fds(fd_size * 2);
+    }
 }
 
 void Connections::delete_con(int i) {
@@ -124,6 +136,12 @@ struct pollfd* Connections::get_fds() {
 
 int Connections::get_fd_count() const {
     return fd_count;
+}
+
+Connections::~Connections() {
+    /* Remove the struct from memory as it
+     * could be reallocated many times. */
+    std::free(fds);
 }
 
 int main() {
@@ -176,7 +194,7 @@ int main() {
         // Run through all the all the existing connections to see if there's data ready.
         for (int i = 0; i < obj_connections.get_fd_count(); i++) {
             // Check if data is ready to read.
-            if (obj_connections.get_fds()[i].revents == POLLIN) {
+            if (obj_connections.get_fds()[i].revents & POLLIN) {
 
                 // If listener is ready get new connections.
                 if (obj_connections.get_fds()[i].fd == obj_listener.get_fd()) {
@@ -197,13 +215,10 @@ int main() {
                     ssize_t recv_bytes = recv(client_fd, &buffer, sizeof buffer, 0);
 
                     if (recv_bytes <= 0) {
-                        if (recv_bytes == 0) {
-                            std::cout << "Connection closed by client.\n";
-                        // If we got -1 from "recv()".
-                        } else {
+                        if (recv_bytes == -1)
                             raise_error("recv");
-                        }
 
+                        std::cout << "Connection closed by client.\n";
                         close(client_fd);
                         obj_connections.delete_con(i);
                     // If we got some data.

@@ -119,7 +119,6 @@ std::string resolveQuery(char *buff, const int &sock) {
 
 	    // Fill all structs in array with project id_numbers.
         initializeIssues(buff_size, api_call, data);
-        // TODO: Find out why this function dies after 9 connections.
         if (sendRequest(data, sock) == -1)
             return "";
 	} else {
