@@ -56,4 +56,6 @@ int sendRequest(struct issue *is, const int &sock); // Struct will already have 
  * to the main module. Then, it returns a JSON string with results. */
 std::string resolveQuery(char *query, const int &sock); // Returns empty string on error.
 
+
+
 #endif /* QUERIES_H */
