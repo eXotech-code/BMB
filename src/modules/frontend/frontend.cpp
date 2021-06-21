@@ -226,7 +226,7 @@ int main() {
                     // 3. ???
                     // 4. Profit
                 }
-                // If this is not main module nor listener then it is client.
+                // If this is not main module nor listener then it is web client.
                 else {
                     ssize_t recv_bytes = recv(conn.fd, &buffer, sizeof buffer, 0);
 
