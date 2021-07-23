@@ -16,8 +16,9 @@
  * needed to parse HTTP requests and queries
  * from the frontend. */
 
-// Isolate API request type from the rest of the buffer.
-std::string isolate(const std::string &b);
+/* Returns a fragment of text starting with
+ * some string and ending with a space */
+std::string textFragment(const std::string &txt, const std::string &search_str, char end_c = ' ');
 
 /* Struct to be sent to the main module
  * and filed with data. */
@@ -56,14 +57,17 @@ struct query {
  * waiting to be handled. It adds new queries and responds to them. */
 class Queries {
 public:
-    Queries(int main); // Assigns socket descriptor of main module;
-    void add(std::string query, struct pollfd *cl_pfd);
-    int remove(int i); // Removes a query from queue.
-    int addResponse(std::string request, std::string response); // Adds response from main based on request contents.
+    explicit Queries(int main); // Assigns socket descriptor of main module;
+    static std::string isolate(const std::string &b); // Isolate API request type from the rest of the buffer.
+    void add(std::string query, struct pollfd &cl_pfd);
+    int find(const std::string& request); // Find which item in queue contains that request.
+    void remove(int fd); // Removes a query from queue.
+    static std::string *separate(char *message); // Separates request from response.
+    static int addResponse(char *buff, struct pollfd &main_pfd, Queries &instance); // Adds response from main based on request contents.
     std::string getResponse(int fd); // Looks up response from main in queue.
     /* Compares query to list of supported queries and sends appropriate request
      * to the main module. Then it adds it to queue and sets appropriate socket to POLLOUT. */
-    int resolve(char *buff, struct pollfd &cl_pfd);
+    static int resolve(char *buff, struct pollfd &cl_pfd, Queries &instance);
 private:
     std::vector<query> queue;
     int main_sock;

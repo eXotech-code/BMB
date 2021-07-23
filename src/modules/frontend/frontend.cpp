@@ -130,6 +130,36 @@ void Connections::delete_con(int i) {
    fd_count--;
 }
 
+void Connections::receiveData(int i, int (*handlingFunction)(char *, struct pollfd &, Queries &), Queries &instance) {
+    char buffer[BUFF_SIZE];
+
+    auto from = get_fds()[i].fd;
+
+    ssize_t recv_bytes = recv(from, &buffer, sizeof buffer, 0);
+
+    if (recv_bytes <= 0) {
+        if (recv_bytes == -1)
+            raise_error("recv");
+
+        std::cout << "Connection closed by client.\n";
+        close(from);
+        delete_con(i);
+    // If we got some data.
+    } else {
+        std::cout << buffer << "\n";
+        if (handlingFunction(buffer, get_fds()[i], instance))
+        {
+            std::cerr << "Failure in handling function.\n";
+        }
+    }
+}
+
+int Connections::sendData(int i, const std::string &data) {
+    if (send(fds[i].fd, data.c_str(), data.size(), 0) == -1)
+        return -1;
+    return 0;
+}
+
 struct pollfd* Connections::get_fds() {
     return fds;
 }
@@ -149,9 +179,6 @@ int main() {
     struct sockaddr_storage client_addr = { 0 }; // New client address
     socklen_t addrlen;
     char client_ip[INET6_ADDRSTRLEN];
-
-    // TEMPORARY
-    char buffer[BUFF_SIZE];
 
     // Socket for passing information between modules.
     int unix_sock;
@@ -220,44 +247,27 @@ int main() {
                 }
                 // If this is main module.
                 else if (conn.fd == unix_sock) {
-                    // TODO:
-                    // 1. Separate request string from response string.
-                    // 2. q.addResponse(request, response)
-                    // 3. ???
-                    // 4. Profit
+                    obj_connections.receiveData(i, Queries::addResponse, q);
                 }
                 // If this is not main module nor listener then it is web client.
                 else {
-                    ssize_t recv_bytes = recv(conn.fd, &buffer, sizeof buffer, 0);
-
-                    if (recv_bytes <= 0) {
-                        if (recv_bytes == -1)
-                            raise_error("recv");
-
-                        std::cout << "Connection closed by client.\n";
-                        close(conn.fd);
-                        obj_connections.delete_con(i);
-                    // If we got some data.
-                    } else {
-                        if (q.resolve(buffer, obj_connections.get_fds()[i]))
-						{
-							std::cout << "Couldn't find any query in this data packet.\n";
-						} else {
-                            std::cout << "Added new query to queue.\n";
-                        }
-                    }
+                    obj_connections.receiveData(i, Queries::resolve, q);
                 }
             }
 
             // If it is one of the sockets that we marked to send them data...
             if (conn.revents & POLLOUT) {
-                // TODO:
-                // 1. q.getResponse(conn.fd)
-                // 2. Send that response to this file descriptor.
-                // 3. q.remove(conn.fd)
-                // 4. Mark this client again as POLLIN
-                // 5. ???
-                // 6. Profit
+                // Send allow response.
+                obj_connections.sendData(i, "HTTP/1.1 204 No Content\r\n Allow: OPTIONS, GET");
+
+                // Send response to client.
+                obj_connections.sendData(i, q.getResponse(conn.fd));
+
+                // Remove query from queue.
+                q.remove(conn.fd);
+
+                // Mark this client again as POLLIN.
+                conn.events = POLLIN;
             }
         }
 

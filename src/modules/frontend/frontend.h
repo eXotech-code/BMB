@@ -50,6 +50,10 @@ class Connections {
         void resize_fds(int new_size);
         void add_new(int new_fd);
         void delete_con(int i);
+        /* From field is the file descriptor from
+         * which we want to receive the data. */
+        void receiveData(int i, int (*handlingFunction)(char *, struct pollfd &, Queries &), Queries &instance);
+        int sendData(int i, const std::string &data);
         struct pollfd* get_fds();
         int get_fd_count() const;
         ~Connections();

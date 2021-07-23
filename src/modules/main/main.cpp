@@ -79,6 +79,9 @@ int Client::handleCon() {
         if ((data = getData(bytes, buff)).empty())
             return -1;
 
+        // DEBUG TO CHECK IF HANDLING REQUESTS WORKS
+        sendData("0 Q=issues/8 R={response=response}");
+
         std::cout << identity << " sent: " << data << "\n";
     }
 
