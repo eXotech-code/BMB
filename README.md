@@ -2,7 +2,7 @@
 
 # Overview
 
-Basic Multipurpose Backend is a backend layer written in C++,  designed to be fast and modular. It's most important purpose is to provide backend infrastructure for my portfolio website. In the future it could be extended with new modules to work with other projects.
+Basic Multipurpose Backend is a backend layer written in C++,  designed to be fast and modular. Its most important purpose is to provide backend infrastructure for my portfolio website. In the future it could be extended with new modules to work with other projects.
 
 # Planned services
 
